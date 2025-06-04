@@ -1,5 +1,6 @@
 #각자 코드 작성 후 추후에 합쳐서 하나의 코드로 만들 때 쓸 파일.
 #메인페이지 여행지입력
+#예시코드
 import streamlit as st
 
 st.set_page_config(page_title="여행 추천 서비스", page_icon="✈️")

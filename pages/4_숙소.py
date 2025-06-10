@@ -6,12 +6,12 @@ from streamlit.components.v1 import html
 import openai  # OpenAI 연동 추가
 
 # 🔐 API 키들
-TOUR_API_KEY = "여기에_공공데이터포털_인증키"
-NAVER_CLIENT_ID = "여기에_네이버_Client_ID"
-NAVER_CLIENT_SECRET = "여기에_네이버_Client_Secret"
-KAKAO_REST_API_KEY = "여기에_카카오_REST_API_키"
-KAKAO_JS_KEY = "여기에_카카오_JS_키"
-OPENAI_API_KEY = "여기에_OpenAI_API_키"
+TOUR_API_KEY = "67ZI3HToypVEN3h7PM5xNXd3UxjVQNfclWP4RkTOfVI+SdETToUI87gcTbuNYn+iO3854Y760wrrFIcbBUN28w=="
+NAVER_CLIENT_ID = "wxZvR_Hx1sBwjb1rnxBZ"
+NAVER_CLIENT_SECRET = "Hhznyt4xzf"
+KAKAO_REST_API_KEY = "b3759742989e0c923c37d8baf058f95c"
+KAKAO_JS_KEY = "cc98952f720158e7bcfbde9b02855a28"
+OPENAI_API_KEY = "469cdd3a22d09d0083db2e1fd06c79ad"
 
 openai.api_key = OPENAI_API_KEY
 

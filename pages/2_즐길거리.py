@@ -103,7 +103,7 @@ def what(place):
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": f"검색기능을 활용해 다음 장소를 한줄로 간략하게 요약해줘. {place}"}
+            {"role": "system", "content": f"검색기능을 활용해 다음 장소를 한줄로 간략하게 요약해줘. 문장안에 장소가 들어가선 안되고 설명만 적어주면 돼. {place}"}
         ]
     )
     return response.choices[0].message.content

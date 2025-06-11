@@ -102,7 +102,7 @@ else:
     st.error("❌ 장소 좌표를 불러올 수 없습니다.")
 
 if len(data) >= 1:
-    st.write("주변 장소:")
+    st.markdown("<h3>가볼만 한 곳들 :</h3>", unsafe_allow_html=True)
     for i, item in enumerate(data[:5]):  # 최대 5개 표시
         w = data[i][0]
         contents = what(w)

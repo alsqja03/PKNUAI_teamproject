@@ -1,4 +1,3 @@
-#즐길거리추천 페이지
 import openai
 import langchain
 import ast
@@ -15,11 +14,10 @@ from langchain_core.messages import ToolMessage
 from langchain_community.tools import DuckDuckGoSearchResults
 from langgraph.prebuilt import create_react_agent
 
-
+# ✅ Kakao API Key
 KAKAO_API_KEY = "83c0445f5fc4a2ee846f09e47fb00187"
 
-
-# 1. 장소 키워드로 좌표 얻기
+# ✅ 장소 키워드로 좌표 얻기
 def get_coordinates_by_keyword(query):
     url = "https://dapi.kakao.com/v2/local/search/keyword.json"
     headers = {"Authorization": f"KakaoAK {KAKAO_API_KEY}"}
@@ -32,7 +30,7 @@ def get_coordinates_by_keyword(query):
             return float(first['x']), float(first['y'])  # (longitude, latitude)
     return None
 
-# 2. 좌표 기준으로 업종별 장소 검색
+# ✅ 좌표 기준으로 업종별 장소 검색
 def find_places_by_categories(x, y, category_codes, radius=1000):
     url = "https://dapi.kakao.com/v2/local/search/category.json"
     headers = {"Authorization": f"KakaoAK {KAKAO_API_KEY}"}
@@ -52,11 +50,10 @@ def find_places_by_categories(x, y, category_codes, radius=1000):
 
     return all_results
 
-# 3. 장소이름 → 결과 목록 + 좌표 반환
+# ✅ 장소이름 → 결과 목록 + 좌표 반환
 def search_nearby_places_list(place_name, category_codes):
     coords = get_coordinates_by_keyword(place_name)
     if not coords:
-        print("❌ 장소 좌표를 찾을 수 없습니다.")
         return [], None
 
     x, y = coords
@@ -70,34 +67,36 @@ def search_nearby_places_list(place_name, category_codes):
         lon = float(place['x'])
         output_list.append([name, address, lat, lon])  # 장소명, 주소, 위도, 경도
 
-    return output_list, (x, y)  # 장소 목록과 좌표 함께 반환
+    return output_list, (x, y)
 
-# 📍 검색 대상
-where = "사상구 학장동"
-data, coords = search_nearby_places_list(where, ["CT1", "AT4"])
+# ✅ Streamlit UI 시작
+st.title("📍 주변 장소 탐색")
 
-# 📋 정보 출력
+# ✅ Main 페이지에서 입력된 장소 사용
+if "location" in st.session_state and st.session_state["location"]:
+    where = st.session_state["location"]
+    st.info(f"사용자가 입력한 장소: **{where}** 기준으로 검색합니다.")
+else:
+    st.warning("⚠️ 메인 페이지에서 여행지를 먼저 입력해주세요.")
+    st.stop()
+
+# ✅ 장소 검색 실행
+data, coords = search_nearby_places_list(where, ["CT1", "AT4"])  # 문화시설, 관광명소 등
+
 if coords:
     st.write(f"🔍 검색 장소: {where}")
     st.write(f"📍 좌표: 경도 {coords[0]}, 위도 {coords[1]}")
-    # 지도 생성
+    
     m = folium.Map(location=[coords[1], coords[0]], zoom_start=15)
-
-    # 기준 장소 마커
     folium.Marker(location=[coords[1], coords[0]], popup=where, tooltip="검색 장소").add_to(m)
 
-    # 주변 장소 10개 마커
     for place in data[:10]:
-        coords_place = get_coordinates_by_keyword(place[0])
-        if coords_place:
-            folium.Marker(location=[coords_place[1], coords_place[0]], popup=place[0], tooltip=place[1]).add_to(m)
+        folium.Marker(location=[place[2], place[3]], popup=place[0], tooltip=place[1]).add_to(m)
 
-    # 지도 스트림릿에 띄우기
     st_folium(m, width=700, height=500)
-else:
-    st.error("❌ 장소 좌표를 불러올 수 없습니다.")
 
-if len(data) >= 1:
     st.write("▶️ 주변 장소:")
-    for i, item in enumerate(data[:5]):  # 최대 5개 표시
+    for i, item in enumerate(data[:5]):
         st.write(f"{i+1}. 위치: {item[0]} , 주소: {item[1]}")
+else:
+    st.error("❌ 입력한 장소의 좌표를 찾을 수 없습니다.")

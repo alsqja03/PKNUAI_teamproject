@@ -90,7 +90,7 @@ if "location" in st.session_state:
     st.subheader("📌 GPT 추천 숙소 리스트")
     st.markdown(recommendations, unsafe_allow_html=True)
 
-    # 숙소명 추출
+    # 숙소명 추출 및 카드 UI 생성
     stay_names = []
     for line in recommendations.split('\n'):
         if line.strip().startswith(tuple(str(i) + '.' for i in range(1, 10))):
@@ -101,8 +101,16 @@ if "location" in st.session_state:
             except:
                 continue
 
-    # 지도에 표시
     if stay_names:
+        st.subheader("🏨 숙소 카드 보기 + 검색 링크")
+        for stay in stay_names:
+            query = urllib.parse.quote(stay)
+            search_url = f"https://search.naver.com/search.naver?query={query}"
+            st.markdown(f"### 🏨 {stay}")
+            st.image(f"https://via.placeholder.com/300x200?text={urllib.parse.quote(stay)}")
+            st.markdown(f"[🔗 네이버에서 '{stay}' 검색하기]({search_url})")
+            st.markdown("---")
+
         show_map_with_places(stay_names)
     else:
         st.warning("❗ 숙소 이름을 인식할 수 없어 지도를 표시할 수 없습니다.")

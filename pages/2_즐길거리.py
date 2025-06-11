@@ -70,7 +70,7 @@ def search_nearby_places_list(place_name, category_codes):
     return output_list, (x, y)  # 장소 목록과 좌표 함께 반환
 
 # 📍 검색 대상
-where = "사상구 학장동"
+where = st.session_state.location
 data, coords = search_nearby_places_list(where, ["CT1", "AT4"])
 
 # 📋 정보 출력

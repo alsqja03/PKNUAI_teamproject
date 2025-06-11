@@ -18,7 +18,7 @@ def what(place):
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": f"검색기능을 활용해 다음 장소를 한줄로 간략하게 요약해줘. 문장안에 장소가 들어가선 안되고 설명만 적어주면 돼. 그리고 말투는 ~입니다 체로 공손하게 말해줘. {place}"}
+            {"role": "system", "content": f"검색기능을 활용해 다음 장소를 한줄로 간략하게 요약해줘. 말투는 ~입니다 체여야하고 장소이름을 굳이 안말해도돼. 장소의특성만 알려주면돼.  {place}"}
         ]
     )
     return response.choices[0].message.content
@@ -60,7 +60,7 @@ def find_places_by_categories(x, y, category_codes, radius=1000):
 def search_nearby_places_list(place_name, category_codes):
     coords = get_coordinates_by_keyword(place_name)
     if not coords:
-        print("❌ 장소 좌표를 찾을 수 없습니다.")
+        print("장소 좌표를 찾을 수 없습니다.")
         return [], None
 
     x, y = coords
@@ -76,14 +76,14 @@ def search_nearby_places_list(place_name, category_codes):
 
     return output_list, (x, y)  # 장소 목록과 좌표 함께 반환
 
-# 📍 검색 대상
-where = st.session_state["location"]
+# 검색 대상
+where = "사상구 학장동"
 data, coords = search_nearby_places_list(where, ["CT1", "AT4"])
 
-# 📋 정보 출력
+#  정보 출력
 if coords:
-    st.write(f"🔍 검색 장소: {where}")
-    st.write(f"📍 좌표: 경도 {coords[0]}, 위도 {coords[1]}")
+    st.write(f"검색 장소: {where}")
+    st.write(f"좌표: 경도 {coords[0]}, 위도 {coords[1]}")
     # 지도 생성
     m = folium.Map(location=[coords[1], coords[0]], zoom_start=15)
 
@@ -102,12 +102,9 @@ else:
     st.error("❌ 장소 좌표를 불러올 수 없습니다.")
 
 if len(data) >= 1:
-    st.write("▶️ 주변 장소:")
+    st.write("주변 장소:")
     for i, item in enumerate(data[:5]):  # 최대 5개 표시
-        st.write(f"{i+1}.{item[0]} , 주소: {item[1]} , 설명 : ")
-
-
-for i in [0,1,2,3,4]:
-    w = data[i][0]
-    contents = what(w)
-    st.write(contents)
+        w = data[i][0]
+        contents = what(w)
+        st.write(f"{i+1}.{item[0]} , 주소: {item[1]}")
+        st.write(contents)

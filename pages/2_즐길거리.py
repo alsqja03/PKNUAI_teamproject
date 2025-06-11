@@ -14,7 +14,14 @@ apikey = st.text_input("openai api key를 입력하세요 :", type = "password")
 st.session_state.api_key = apikey
 client = OpenAI(api_key=apikey)
 
-
+def what(place):
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": f"검색기능을 활용해 다음 장소를 한줄로 간략하게 요약해줘. 문장안에 장소가 들어가선 안되고 설명만 적어주면 돼. 그리고 말투는 ~입니다 체로 공손하게 말해줘. {place}"}
+        ]
+    )
+    return response.choices[0].message.content
 
 # 1. 장소 키워드로 좌표 얻기
 def get_coordinates_by_keyword(query):
@@ -97,16 +104,8 @@ else:
 if len(data) >= 1:
     st.write("▶️ 주변 장소:")
     for i, item in enumerate(data[:5]):  # 최대 5개 표시
-        st.write(f"{i+1}.{item[0]} , 주소: {item[1]}")
+        st.write(f"{i+1}.{item[0]} , 주소: {item[1]} , 설명 : ")
 
-def what(place):
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": f"검색기능을 활용해 다음 장소를 한줄로 간략하게 요약해줘. 문장안에 장소가 들어가선 안되고 설명만 적어주면 돼. {place}"}
-        ]
-    )
-    return response.choices[0].message.content
 
 for i in [0,1,2,3,4]:
     w = data[i][0]

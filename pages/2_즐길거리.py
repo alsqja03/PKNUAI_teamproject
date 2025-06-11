@@ -7,6 +7,7 @@ from streamlit_folium import st_folium
 import streamlit as st
 import streamlit.components.v1 as components
 from openai import OpenAI
+import time
 
 KAKAO_API_KEY = "83c0445f5fc4a2ee846f09e47fb00187"
 pq = "sk-proj-VniTgLPw2NvHFRnnZ-6A6ygka9U-3uCPIfbYLFXXLcBoFIpopYa2eJVXGhXc06Yw"
@@ -43,6 +44,8 @@ def find_places_by_categories(x, y, category_codes, radius=1000):
     url = "https://dapi.kakao.com/v2/local/search/category.json"
     headers = {"Authorization": f"KakaoAK {KAKAO_API_KEY}"}
     all_results = []
+    
+time.sleep(1)
 
     for code in category_codes:
         params = {
@@ -91,6 +94,7 @@ if coords:
 
     # 기준 장소 마커
     folium.Marker(location=[coords[1], coords[0]], popup=where, tooltip="검색 장소").add_to(m)
+    time.sleep(1)
 
     # 주변 장소 10개 마커
     for place in data[:10]:
@@ -102,7 +106,7 @@ if coords:
     st_folium(m, width=700, height=500)
 else:
     st.error("❌ 장소 좌표를 불러올 수 없습니다.")
-
+time.sleep(1)
 if len(data) >= 1:
     st.markdown("<h3>근처에 가볼만 한 장소들 :</h3>", unsafe_allow_html=True)
     for i, item in enumerate(data[:5]):  # 최대 5개 표시

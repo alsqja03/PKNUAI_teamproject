@@ -4,3 +4,4 @@ python-dotenv
 folium
 streamlit_folium
 polyline
+openai

@@ -12,8 +12,8 @@ KAKAO_API_KEY = "83c0445f5fc4a2ee846f09e47fb00187"
 pq = "sk-proj-VniTgLPw2NvHFRnnZ-6A6ygka9U-3uCPIfbYLFXXLcBoFIpopYa2eJVXGhXc06Yw"
 qp = "yo3E50xRoST3BlbkFJvcMzdaG5JpXLgAWPixiYLd8DIvKePuz0jv0vJP71ubW2_3_loKnA1t2srxe-7E3_5tjt4VNtUA"
 
-ke = pq+qp
-st.session_state.api_key = ke
+
+apikey = pq+qp
 client = OpenAI(api_key=apikey)
 
 def what(place):

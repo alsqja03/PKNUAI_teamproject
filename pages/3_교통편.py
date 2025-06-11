@@ -78,7 +78,7 @@ st.title("🚗 여행지 경로 검색")
 
 st.header("🗺️ 경로 설정")
 start_address = st.text_input("출발지 입력", "서울역")
-end_address = st.text_input("도착지 입력", "강남역")
+end_address = st.text_input("도착지 입력", st.session_state.get("location", "강남역"))
 route_type = st.selectbox("경로 유형 선택", ["도보", "자동차"])
 
 if st.button("경로 검색"):

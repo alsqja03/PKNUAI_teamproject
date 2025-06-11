@@ -6,20 +6,27 @@ import folium
 from streamlit_folium import st_folium
 
 # 🔐 API 키 설정
-OPENAI_API_KEY = "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"  # 여기에 본인의 OpenAI API 키 입력
-KAKAO_API_KEY = "KakaoAK b3759742989e0c923c37d8baf058f95c"  # 여기에 본인의 Kakao REST API 키 입력
+OPENAI_API_KEY = "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"
+NAVER_CLIENT_ID = "wxZvR_Hx1sBwjb1rnxBZ"
+NAVER_CLIENT_SECRET = "Hhznyt4xzf"
 
 # OpenAI 클라이언트
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-# 🧠 GPT로 숙소 추천 받기
+# TM128 → WGS84 임시 변환 함수 (근사값)
+def tm128_to_wgs84(mapx, mapy):
+    lon = mapx * 1e-5 - 126.0
+    lat = mapy * 1e-5 - 34.0
+    return lat, lon
+
+# GPT 숙소 추천
+
 def generate_gpt_based_recommendations(area_name):
     prompt = f"""
-한국의 {area_name} 지역에서 실제 존재할 법한 숙소(게스트하우스, 리조트 등)를 3~4곳 추천해 주세요.
+한국의 {area_name} 지역에서 실제 검색 가능한 숙소(게스트하우스, 호텔, 리조트 등)를 3~4곳 추천해 주세요.
+숙소명은 반드시 한국의 여행 플랫폼(네이버 지도, 야놀자, 여기어때 등)에 실제로 등록된 이름만 사용해 주세요.
 숙소명, 위치, 분위기, 추천 이유를 함께 써 주세요.
-각 숙소는 마치 여행 블로그에서 소개하듯, 줄 나눠서 보기 좋게 정리해 주세요.
-- 실제 한국 여행 플랫폼(네이버 지도, 야놀자, 여기어때 등)에서 검색 가능한 실제 숙소명을 추천해 주세요.
-- 반드시 전체 이름을 포함하고, 지역명도 정확히 명시해 주세요.
+각 숙소는 마치 여행 블로그에서 소개하듯, 보기 좋게 줄 나눠서 정리해 주세요.
 """
     try:
         response = client.chat.completions.create(
@@ -35,28 +42,32 @@ def generate_gpt_based_recommendations(area_name):
         st.error(f"❌ 추천 생성 오류: {e}")
         return "추천 결과를 생성할 수 없습니다."
 
-# 📍 숙소명으로 좌표 검색 (카카오 API)
+# 네이버 장소 검색 API → 위도/경도 변환 포함
 def get_location_and_image(place_name, region=None):
     query = f"{region} {place_name}" if region else place_name
-    headers = {"Authorization": KAKAO_API_KEY}
-    url = "https://dapi.kakao.com/v2/local/search/keyword.json"
-    params = {"query": query}
+    headers = {
+        "X-Naver-Client-Id": NAVER_CLIENT_ID,
+        "X-Naver-Client-Secret": NAVER_CLIENT_SECRET
+    }
+    url = "https://openapi.naver.com/v1/search/local.json"
+    params = {"query": query, "display": 1}
     try:
         res = requests.get(url, headers=headers, params=params).json()
-        documents = res.get("documents", [])
-        if not documents:
-            st.warning(f"📍 카카오 검색 실패: {query}")
+        items = res.get("items", [])
+        if not items:
+            st.warning(f"📍 네이버 장소 검색 실패: {query}")
             return None, None, None
-        top = documents[0]
-        name = top["place_name"]
-        lat = float(top["y"])
-        lon = float(top["x"])
+        top = items[0]
+        name = top["title"].replace("<b>", "").replace("</b>", "")
+        mapx = float(top["mapx"])
+        mapy = float(top["mapy"])
+        lat, lon = tm128_to_wgs84(mapx, mapy)
         return name, lat, lon
     except Exception as e:
-        st.error(f"❌ 좌표 검색 오류: {e}")
+        st.error(f"❌ 네이버 장소 검색 오류: {e}")
         return None, None, None
 
-# 🗺️ 지도에 마커 표시
+# 지도 마커 표시 함수
 def show_map_with_places(place_list, region):
     m = folium.Map(location=[36.5, 127.5], zoom_start=6)
     added = False
@@ -98,7 +109,7 @@ if "location" in st.session_state:
     for line in recommendations.split('\n'):
         if line.strip().startswith(tuple(str(i) + '.' for i in range(1, 10))):
             try:
-                name = line.split('.')[1].split('(')[0].strip()
+                name = line.split('.', 1)[1].strip()
                 stay_names.append(name)
             except:
                 continue

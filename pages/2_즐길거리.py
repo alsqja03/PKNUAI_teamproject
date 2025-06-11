@@ -108,3 +108,6 @@ if len(data) >= 1:
         contents = what(w)
         st.write(f"{i+1}.{item[0]} , 주소: {item[1]}")
         st.write(contents)
+        st.markdown(f"<h1>{i+1} . {item[0]) </h1>", unsafe_allow_html=True)
+        st.markdown(f"<h3>주소: {item[1]}</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h3>{contents}</h3>", unsafe_allow_html=True)

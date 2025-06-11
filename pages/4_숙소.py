@@ -6,8 +6,8 @@ import folium
 from streamlit_folium import st_folium
 
 # 🔐 API 키 설정
-OPENAI_API_KEY = "sk-..."  # 여기에 본인의 OpenAI API 키 입력
-KAKAO_API_KEY = "KakaoAK ..."  # 여기에 본인의 Kakao REST API 키 입력
+OPENAI_API_KEY = "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"  # 여기에 본인의 OpenAI API 키 입력
+KAKAO_API_KEY = "KakaoAK b3759742989e0c923c37d8baf058f95c"  # 여기에 본인의 Kakao REST API 키 입력
 
 # OpenAI 클라이언트
 client = OpenAI(api_key=OPENAI_API_KEY)
@@ -17,7 +17,7 @@ def generate_gpt_based_recommendations(area_name):
     prompt = f"""
 한국의 {area_name} 지역에서 실제 존재할 법한 숙소(게스트하우스, 리조트 등)를 3~4곳 추천해 주세요.
 숙소명, 위치, 분위기, 추천 이유를 함께 써 주세요.
-각 숙소는 마치 여행 블로그에서 소개하듯, 짧게 설명해 주세요.
+각 숙소는 마치 여행 블로그에서 소개하듯, 줄 나눠서 보기 좋게 정리해 주세요.
 """
     try:
         response = client.chat.completions.create(
@@ -88,7 +88,7 @@ if "location" in st.session_state:
         recommendations = generate_gpt_based_recommendations(area_name)
 
     st.subheader("📌 GPT 추천 숙소 리스트")
-    st.write(recommendations)
+    st.markdown(recommendations, unsafe_allow_html=True)
 
     # 숙소명 추출
     stay_names = []

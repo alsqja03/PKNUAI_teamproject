@@ -4,6 +4,11 @@ import re
 
 st.title("🍜 여행지 맛집 추천")
 
+# 🔑 API 키 직접 입력 (보안에 유의하세요)
+KAKAO_API_KEY = "cf0f3e08c8579cf39f37df048fc9802a"
+NAVER_CLIENT_ID = "288mB5F53usWEHGy9ip8"
+NAVER_CLIENT_SECRET = "qV0iKKCgIG"
+
 # 여행지 확인
 location = st.session_state.get("location")
 if not location:
@@ -14,7 +19,7 @@ if not location:
 # Kakao API 함수 (size=10)
 def search_places(query):
     headers = {
-        "Authorization": f"KakaoAK {st.secrets['KAKAO_API_KEY']}"
+        "Authorization": f"KakaoAK {KAKAO_API_KEY}"
     }
     params = {"query": query, "size": 10}
     res = requests.get("https://dapi.kakao.com/v2/local/search/keyword.json", headers=headers, params=params)
@@ -44,8 +49,8 @@ feature_descriptions = {
 # 블로그 검색 및 키워드/링크 추출
 def get_food_and_features(query, place_name):
     headers = {
-        "X-Naver-Client-Id": st.secrets["NAVER_CLIENT_ID"],
-        "X-Naver-Client-Secret": st.secrets["NAVER_CLIENT_SECRET"]
+        "X-Naver-Client-Id": NAVER_CLIENT_ID,
+        "X-Naver-Client-Secret": NAVER_CLIENT_SECRET
     }
     params = {
         "query": query,

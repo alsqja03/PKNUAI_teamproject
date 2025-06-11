@@ -1,144 +1,120 @@
-#숙소 예약
 import streamlit as st
 import requests
-import xml.etree.ElementTree as ET
-from streamlit.components.v1 import html
-import openai  # OpenAI 연동 추가
+import urllib.parse
+from openai import OpenAI
+import folium
+from streamlit_folium import st_folium
 
-# 🔐 API 키들
-TOUR_API_KEY = "67ZI3HToypVEN3h7PM5xNXd3UxjVQNfclWP4RkTOfVI+SdETToUI87gcTbuNYn+iO3854Y760wrrFIcbBUN28w=="
-NAVER_CLIENT_ID = "wxZvR_Hx1sBwjb1rnxBZ"
-NAVER_CLIENT_SECRET = "Hhznyt4xzf"
-KAKAO_REST_API_KEY = "b3759742989e0c923c37d8baf058f95c"
-KAKAO_JS_KEY = "cc98952f720158e7bcfbde9b02855a28"
-OPENAI_API_KEY = "469cdd3a22d09d0083db2e1fd06c79ad"
+# 🔐 API 키 설정
+OPENAI_API_KEY = "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"  # 여기에 본인의 OpenAI API 키 입력
+KAKAO_API_KEY = "KakaoAK b3759742989e0c923c37d8baf058f95c"  # 여기에 본인의 Kakao REST API 키 입력
 
-openai.api_key = OPENAI_API_KEY
+# OpenAI 클라이언트
+client = OpenAI(api_key=OPENAI_API_KEY)
 
-AREA_CODES = {
-    "서울": 1,
-    "부산": 6,
-    "제주": 39,
-    "강원": 32,
-    "경기": 31,
-    "인천": 2
-}
+# 🧠 사용자 입력에서 지역명 추출
+def extract_area_name(user_input):
+    prompt = f'다음 문장에서 한국의 여행 지역명을 하나만 뽑아줘. 예: "{user_input}" → "제주"'
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "넌 한국 지역명을 뽑는 도우미야. 지역명만 한 단어로 출력해."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.2
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        st.error(f"❌ 지역 추출 오류: {e}")
+        return None
 
-def normalize_region(user_input):
-    """OpenAI를 사용하여 사용자의 입력을 지역 키워드로 정규화"""
-    system_msg = "다음은 여행지 관련 사용자 입력입니다. 이를 가능한 정확한 한국의 지역명으로 정규화해서 대답하세요. 가능한 값은 " + ", ".join(AREA_CODES.keys()) + " 중 하나입니다. 오타나 대충 쓴 말도 알아서 고쳐주세요. 다른 설명은 필요 없고, 지역명만 한 단어로 대답하세요."
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[
-            {"role": "system", "content": system_msg},
-            {"role": "user", "content": user_input}
-        ]
-    )
-    return response["choices"][0]["message"]["content"].strip()
+# 🧠 GPT로 숙소 추천 받기
+def generate_gpt_based_recommendations(area_name, user_input):
+    prompt = f"""
+한국의 {area_name} 지역에서 여행하려는 사람이 있습니다.
+입력 내용: \"{user_input}\"
+이 사람에게 적합한 숙소를 3~4곳 추천해 주세요. 숙소명(가상 가능), 위치, 분위기, 추천 이유를 함께 써 주세요.
+각 숙소는 마치 여행 블로그에서 소개하듯, 짧게 설명해 주세요.
+"""
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "너는 여행 숙소 전문가야."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        st.error(f"❌ 추천 생성 오류: {e}")
+        return "추천 결과를 생성할 수 없습니다."
 
-def search_blog_reviews(query):
-    url = "https://openapi.naver.com/v1/search/blog.json"
-    headers = {
-        "X-Naver-Client-Id": NAVER_CLIENT_ID,
-        "X-Naver-Client-Secret": NAVER_CLIENT_SECRET
-    }
-    params = {"query": query, "display": 2, "sort": "sim"}
-    res = requests.get(url, headers=headers, params=params)
-    if res.status_code == 200:
-        return res.json().get("items", [])
-    return []
+# 📍 숙소명으로 좌표 검색 (카카오 API)
+def get_location_and_image(place_name):
+    headers = {"Authorization": KAKAO_API_KEY}
+    url = "https://dapi.kakao.com/v2/local/search/keyword.json"
+    params = {"query": place_name}
+    try:
+        res = requests.get(url, headers=headers, params=params).json()
+        documents = res.get("documents", [])
+        if not documents:
+            return None, None, None
+        top = documents[0]
+        name = top["place_name"]
+        lat = float(top["y"])
+        lon = float(top["x"])
+        return name, lat, lon
+    except:
+        return None, None, None
 
-def get_coordinates(address):
-    url = "https://dapi.kakao.com/v2/local/search/address.json"
-    headers = {"Authorization": f"KakaoAK {KAKAO_REST_API_KEY}"}
-    params = {"query": address}
-    res = requests.get(url, headers=headers, params=params)
-    if res.status_code == 200:
-        documents = res.json().get("documents", [])
-        if documents:
-            return documents[0]["y"], documents[0]["x"]
-    return None, None
+# 🗺️ 지도에 마커 표시
+def show_map_with_places(place_list):
+    m = folium.Map(location=[36.5, 127.5], zoom_start=6)
+    for place in place_list:
+        name, lat, lon = get_location_and_image(place)
+        if lat and lon:
+            folium.Marker(
+                location=[lat, lon],
+                popup=name,
+                icon=folium.Icon(color='blue')
+            ).add_to(m)
+    st.subheader("🗺️ 지도에서 보기")
+    st_folium(m, width=700)
 
-def display_map(y, x):
-    map_html = f"""
-    <div id="map" style="width:100%;height:350px;"></div>
-    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey={KAKAO_JS_KEY}"></script>
-    <script>
-      var container = document.getElementById('map');
-      var options = {{
-        center: new kakao.maps.LatLng({y}, {x}),
-        level: 3
-      }};
-      var map = new kakao.maps.Map(container, options);
-      var marker = new kakao.maps.Marker({{
-          position: new kakao.maps.LatLng({y}, {x})
-      }});
-      marker.setMap(map);
-    </script>
-    """
-    html(map_html, height=370)
+# ▶️ Streamlit UI
+st.title("🏨 자연어 기반 숙소 추천기 + 지도")
+user_input = st.text_input("어디로 여행 가고 싶으세요?", placeholder="예: 부모님과 함께 조용한 바닷가 여행")
 
-# 🌍 Streamlit 인터페이스
-st.title("🌐 자유 입력 기반 숙소 추천 도우미")
-user_input = st.text_input("여행지를 입력해 주세요 (예: '제주 가고 싶어', '서울 근처로 여행갈래요' 등)")
+if user_input:
+    with st.spinner("🧠 여행지 파악 중..."):
+        area_name = extract_area_name(user_input)
 
-if st.button("숙소 추천 보기"):
-    if not user_input.strip():
-        st.warning("여행지를 입력해 주세요.")
-    else:
-        with st.spinner("여행 지역 파악 중..."):
-            region = normalize_region(user_input)
-        
-        if region not in AREA_CODES:
-            st.error(f"'{region}' 지역은 현재 지원하지 않습니다.")
+    if area_name:
+        st.success(f"추출된 지역: {area_name}")
+
+        with st.spinner("✍️ GPT가 숙소를 추천하는 중..."):
+            recommendations = generate_gpt_based_recommendations(area_name, user_input)
+
+        st.subheader("📌 GPT 추천 숙소 리스트")
+        st.write(recommendations)
+
+        # 숙소명 추출 (예외 방지형 안전 버전)
+        stay_names = []
+        for line in recommendations.split('\n'):
+            if line.strip().startswith(tuple(str(i) + '.' for i in range(1, 10))):
+                try:
+                    if '숙소명:' in line:
+                        name = line.split('숙소명:')[1].split('위치')[0].strip().replace(':', '')
+                        stay_names.append(name)
+                except:
+                    continue
+
+        # 지도에 표시
+        if stay_names:
+            show_map_with_places(stay_names)
         else:
-            st.success(f"🎯 인식된 여행 지역: {region}")
-            area_code = AREA_CODES[region]
-
-            # 공공데이터 API 호출
-            with st.spinner("숙소 정보를 불러오는 중..."):
-                url = "http://apis.data.go.kr/B551011/KorService1/searchStay1"
-                params = {
-                    "ServiceKey": TOUR_API_KEY,
-                    "areaCode": area_code,
-                    "MobileOS": "ETC",
-                    "MobileApp": "TravelApp",
-                    "arrange": "A",
-                    "numOfRows": 3,
-                    "pageNo": 1,
-                    "listYN": "Y"
-                }
-
-                response = requests.get(url, params=params)
-                root = ET.fromstring(response.content)
-                items = root.findall(".//item")
-
-                if not items:
-                    st.warning("숙소 데이터를 찾을 수 없습니다.")
-                else:
-                    for item in items:
-                        title = item.findtext("title", default="제목 없음")
-                        addr = item.findtext("addr1", default="주소 없음")
-                        image = item.findtext("firstimage", default="")
-
-                        st.subheader(title)
-                        st.write(f"📍 {addr}")
-                        if image:
-                            st.image(image, width=300)
-
-                        # 지도 출력
-                        y, x = get_coordinates(addr)
-                        if y and x:
-                            display_map(y, x)
-                        else:
-                            st.write("📌 지도 정보를 불러올 수 없습니다.")
-
-                        # 블로그 리뷰
-                        st.markdown("**📝 관련 블로그 리뷰:**")
-                        blog_results = search_blog_reviews(title)
-                        if blog_results:
-                            for blog in blog_results:
-                                st.markdown(f"- [{blog['title']}]({blog['link']})")
-                        else:
-                            st.write("리뷰가 없습니다.")
-                        st.markdown("---")
+            st.warning("❗ 숙소 이름을 인식할 수 없어 지도를 표시할 수 없습니다.")
+    else:
+        st.warning("지역명을 인식하지 못했어요. 다시 입력해 주세요.")

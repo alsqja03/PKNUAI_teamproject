@@ -23,6 +23,7 @@ def generate_gpt_based_recommendations(area_name):
 추천 이유: 부산의 아름다운 해변을 전망하면서 휴식을 취할 수 있는 곳입니다. 또한, 조식이 포함되어 있어 편리하게 이용할 수 있습니다.
 네이버 블로그 후기: 넓은 테라스에서 바라보는 부산의 야경이 아름답다는 후기가 많습니다. 또한, 깨끗하고 세련된 인테리어에 만족하는 손님들이 많습니다.
 평점: 4.5/5
+키워드: #바다전망 #조식포함 #감성숙소 #프라이빗 #해운대
 
 이 포맷을 그대로 사용해 주세요.
 """
@@ -66,9 +67,13 @@ if "location" in st.session_state:
         if "숙소명" in data:
             blog_search_url = f"https://search.naver.com/search.naver?query={urllib.parse.quote(data['숙소명'] + ' 후기')}"
             rating_url = f"https://map.naver.com/v5/search/{urllib.parse.quote(data['숙소명'])}"
-            card_html = f"""
+            keywords = data.get("키워드", "")
+            keyword_html = f"<p style='color:gray; font-size:0.9em; margin-top:-5px;'>{keywords}</p>" if keywords else ""
+
+            card_html = f'''
             <div style="border:1px solid #ccc; border-radius:10px; padding:16px; margin-bottom:20px; box-shadow:2px 2px 8px rgba(0,0,0,0.1);">
-                <h4 style="margin-bottom:10px;">🏨 {data.get('숙소명')}</h4>
+                <h4 style="margin-bottom:6px;">🏨 {data.get('숙소명')}</h4>
+                {keyword_html}
                 <p>📍 <strong>위치:</strong> {data.get('위치', '정보 없음')}</p>
                 <p>🌅 <strong>분위기:</strong> {data.get('분위기', '정보 없음')}</p>
                 <p>✅ <strong>추천 이유:</strong> {data.get('추천 이유', '정보 없음')}</p>
@@ -82,9 +87,8 @@ if "location" in st.session_state:
                     color:white;
                     text-decoration:none;
                     border-radius:5px;
-                    font-weight:bold;
-                ">🔗 네이버 블로그 후기 보기</a>
-                <br>
+                    font-weight:bold;">
+                    🔗 네이버 블로그 후기 보기</a><br>
                 <a href="{rating_url}" target="_blank" style="
                     display:inline-block;
                     margin-top:8px;
@@ -93,10 +97,10 @@ if "location" in st.session_state:
                     color:white;
                     text-decoration:none;
                     border-radius:5px;
-                    font-weight:bold;
-                ">⭐ 지도에서 평점 확인</a>
+                    font-weight:bold;">
+                    ⭐ 지도에서 평점 확인</a>
             </div>
-            """
+            '''
             st.markdown(card_html, unsafe_allow_html=True)
 else:
     st.info("여행지를 먼저 입력해주세요. 메인 화면에서 입력하면 여기에 자동으로 연결됩니다.")

@@ -6,3 +6,13 @@ streamlit_folium
 polyline
 OpenAI
 openai
+
+langchain
+langchain-openai
+langchain-core
+langchain-community
+langgraph
+duckduckgo-search
+
+
+

@@ -3,12 +3,27 @@ import requests
 import urllib.parse
 from openai import OpenAI
 
-# 🔐 API 키 설정
-OPENAI_API_KEY = "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"
-NAVER_CLIENT_ID = "wxZvR_Hx1sBwjb1rnxBZ"
-NAVER_CLIENT_SECRET = "Hhznyt4xzf"
+# ▶️ Streamlit 페이지 설정
+st.set_page_config(page_title="숙소 추천기", page_icon="🏨")
+st.title("🏨 GPT 기반 숙소 추천기")
+st.markdown("여행지를 입력하고 추천 숙소 정보를 확인하세요.")
 
-client = OpenAI(api_key=OPENAI_API_KEY)
+# ▶️ 사용자 OpenAI API 키 입력 받기
+with st.sidebar:
+    st.header("🔐 OpenAI API 키 입력")
+    openai_key = st.text_input("OpenAI API Key", type="password")
+
+# ▶️ 네이버 API 키는 고정값으로 설정
+naver_client_id = "wxZvR_Hx1sBwjb1rnxBZ"
+naver_client_secret = "Hhznyt4xzf"
+
+# ▶️ 필수 키 입력 체크
+if not openai_key:
+    st.warning("좌측 사이드바에 OpenAI API 키를 입력해주세요.")
+    st.stop()
+
+# ▶️ GPT 클라이언트 생성
+client = OpenAI(api_key=openai_key)
 
 def generate_gpt_based_recommendations(area_name):
     prompt = f"""
@@ -41,12 +56,11 @@ def generate_gpt_based_recommendations(area_name):
         st.error(f"❌ 추천 생성 오류: {e}")
         return "추천 결과를 생성할 수 없습니다."
 
-st.set_page_config(page_title="숙소 추천기", page_icon="🏨")
-st.title("🏨 GPT 기반 숙소 추천기")
-st.markdown("좌측 메뉴 또는 메인 화면에서 입력한 여행지를 기반으로 숙소를 추천해 드립니다.")
+# ▶️ 입력받은 지역으로 실행
+location = st.text_input("여행지를 입력하세요", placeholder="예: 부산, 제주도")
 
-if "location" in st.session_state:
-    area_name = st.session_state["location"]
+if location:
+    area_name = location
     st.success(f"입력된 여행지: {area_name}")
 
     with st.spinner("✍️ GPT가 숙소를 추천하는 중..."):
@@ -54,7 +68,6 @@ if "location" in st.session_state:
 
     st.subheader("📌 GPT 추천 숙소 리스트")
 
-    # 카드 단위로 파싱하여 출력
     blocks = recommendations.split("\n\n")
     for block in blocks:
         lines = block.strip().split("\n")
@@ -103,4 +116,4 @@ if "location" in st.session_state:
             '''
             st.markdown(card_html, unsafe_allow_html=True)
 else:
-    st.info("여행지를 먼저 입력해주세요. 메인 화면에서 입력하면 여기에 자동으로 연결됩니다.")
+    st.info("먼저 여행지를 입력하고, 왼쪽에서 OpenAI API 키를 입력해주세요.")

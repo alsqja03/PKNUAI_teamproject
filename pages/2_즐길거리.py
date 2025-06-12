@@ -44,8 +44,6 @@ def find_places_by_categories(x, y, category_codes, radius=1000):
     url = "https://dapi.kakao.com/v2/local/search/category.json"
     headers = {"Authorization": f"KakaoAK {KAKAO_API_KEY}"}
     all_results = []
-    
-time.sleep(1)
 
     for code in category_codes:
         params = {

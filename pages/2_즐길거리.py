@@ -104,13 +104,14 @@ if True:
 else:
     st.error("❌ 장소 좌표를 불러올 수 없습니다.")
 
-#if len(data) >= 1:
-if True :
+if len(data) >= 1:
+    
     st.markdown("<h3>근처에 가볼만 한 장소들 :</h3>", unsafe_allow_html=True)
     for i, item in enumerate(data[:5]):  # 최대 5개 표시
         w = data[i][0]
-        contents = what(w)
+        
+
         
         st.markdown(f"<h1>{i+1} . {item[0]} </h1>", unsafe_allow_html=True)
         st.markdown(f"<h3>주소: {item[1]}</h3>", unsafe_allow_html=True)
-        st.markdown(f"<h3>한줄요약 : {contents}</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h3>한줄요약 : {what(w)}</h3>", unsafe_allow_html=True)

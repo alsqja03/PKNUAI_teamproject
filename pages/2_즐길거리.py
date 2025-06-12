@@ -85,7 +85,7 @@ def search_nearby_places_list(place_name, category_codes):
 # 검색 대상
 
 
-if st.session_state["location"] is not None:
+if "location" in st.session_state:
     
     where = st.session_state["location"]
     data, coords = search_nearby_places_list(where, ["CT1", "AT4"])

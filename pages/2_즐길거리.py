@@ -84,10 +84,11 @@ def search_nearby_places_list(place_name, category_codes):
 
 # 검색 대상
 where = st.session_state["location"]
-data, coords = search_nearby_places_list(where, ["CT1", "AT4"])
 
 
 if where is not None:
+
+    data, coords = search_nearby_places_list(where, ["CT1", "AT4"])
     #  정보 출력
     if True:
         st.write("검색 장소:" + where)

@@ -83,7 +83,7 @@ where = st.session_state["location"]
 data, coords = search_nearby_places_list(where, ["CT1", "AT4"])
 
 #  정보 출력
-if coords:
+if True:
     st.write(f"검색 장소: {where}")
     st.write(f"좌표: 경도 {coords[0]}, 위도 {coords[1]}")
     # 지도 생성

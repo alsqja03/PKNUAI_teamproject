@@ -8,10 +8,8 @@ st.set_page_config(page_title="숙소 추천기", page_icon="🏨")
 st.title("🏨 GPT 기반 숙소 추천기")
 st.markdown("여행지를 입력하고 추천 숙소 정보를 확인하세요.")
 
-# ▶️ 사용자 OpenAI API 키 입력 받기
-with st.sidebar:
-    st.header("🔐 OpenAI API 키 입력")
-    openai_key = st.text_input("OpenAI API Key", type="password")
+# ▶️ 사용자 OpenAI API 키 입력 (메인 화면)
+openai_key = st.text_input("🔐 OpenAI API Key를 입력하세요", type="password")
 
 # ▶️ 네이버 API 키는 고정값으로 설정
 naver_client_id = "wxZvR_Hx1sBwjb1rnxBZ"
@@ -19,7 +17,7 @@ naver_client_secret = "Hhznyt4xzf"
 
 # ▶️ 필수 키 입력 체크
 if not openai_key:
-    st.warning("좌측 사이드바에 OpenAI API 키를 입력해주세요.")
+    st.warning("OpenAI API 키를 입력해주세요.")
     st.stop()
 
 # ▶️ GPT 클라이언트 생성
@@ -56,11 +54,9 @@ def generate_gpt_based_recommendations(area_name):
         st.error(f"❌ 추천 생성 오류: {e}")
         return "추천 결과를 생성할 수 없습니다."
 
-# ▶️ 입력받은 지역으로 실행
-location = st.text_input("여행지를 입력하세요", placeholder="예: 부산, 제주도")
-
-if location:
-    area_name = location
+# ▶️ 메인 app.py에서 입력한 지역 받아오기
+if "location" in st.session_state:
+    area_name = st.session_state["location"]
     st.success(f"입력된 여행지: {area_name}")
 
     with st.spinner("✍️ GPT가 숙소를 추천하는 중..."):
@@ -116,4 +112,4 @@ if location:
             '''
             st.markdown(card_html, unsafe_allow_html=True)
 else:
-    st.info("먼저 여행지를 입력하고, 왼쪽에서 OpenAI API 키를 입력해주세요.")
+    st.info("메인 페이지(app.py)에서 여행지를 먼저 입력해주세요.")

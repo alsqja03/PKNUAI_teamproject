@@ -86,36 +86,38 @@ def search_nearby_places_list(place_name, category_codes):
 where = st.session_state["location"]
 data, coords = search_nearby_places_list(where, ["CT1", "AT4"])
 
-#  정보 출력
-if True:
-    st.write("검색 장소:" + where)
-    st.write(f"좌표: 경도 {coords[0]}, 위도 {coords[1]}")
-    # 지도 생성
-    m = folium.Map(location=[coords[1], coords[0]], zoom_start=15)
 
-    # 기준 장소 마커
-    folium.Marker(location=[coords[1], coords[0]], popup=where, tooltip="검색 장소").add_to(m)
-
-
-    # 주변 장소 10개 마커
-    for place in data[:10]:
-        coords_place = get_coordinates_by_keyword(place[0])
-        if coords_place:
-            folium.Marker(location=[coords_place[1], coords_place[0]], popup=place[0], tooltip=place[1]).add_to(m)
-
-    # 지도 스트림릿에 띄우기
-    st_folium(m, width=700, height=500)
-else:
-    st.error("❌ 장소 좌표를 불러올 수 없습니다.")
-
-if len(data) >= 1:
+if where is not None:
+    #  정보 출력
+    if True:
+        st.write("검색 장소:" + where)
+        st.write(f"좌표: 경도 {coords[0]}, 위도 {coords[1]}")
+        # 지도 생성
+        m = folium.Map(location=[coords[1], coords[0]], zoom_start=15)
     
-    st.markdown("<h3>근처에 가볼만 한 장소들 :</h3>", unsafe_allow_html=True)
-    for i, item in enumerate(data[:5]):  # 최대 5개 표시
-        w = data[i][0]
+        # 기준 장소 마커
+        folium.Marker(location=[coords[1], coords[0]], popup=where, tooltip="검색 장소").add_to(m)
+    
+    
+        # 주변 장소 10개 마커
+        for place in data[:10]:
+            coords_place = get_coordinates_by_keyword(place[0])
+            if coords_place:
+                folium.Marker(location=[coords_place[1], coords_place[0]], popup=place[0], tooltip=place[1]).add_to(m)
+    
+        # 지도 스트림릿에 띄우기
+        st_folium(m, width=700, height=500)
+    else:
+        st.error("❌ 장소 좌표를 불러올 수 없습니다.")
+    
+    if len(data) >= 1:
         
-
-        
-        st.markdown(f"<h1>{i+1} . {item[0]} </h1>", unsafe_allow_html=True)
-        st.markdown(f"<h3>주소: {item[1]}</h3>", unsafe_allow_html=True)
-        st.markdown(f"<h3>한줄요약 : {what(w)}</h3>", unsafe_allow_html=True)
+        st.markdown("<h3>근처에 가볼만 한 장소들 :</h3>", unsafe_allow_html=True)
+        for i, item in enumerate(data[:5]):  # 최대 5개 표시
+            w = data[i][0]
+            
+    
+            
+            st.markdown(f"<h1>{i+1} . {item[0]} </h1>", unsafe_allow_html=True)
+            st.markdown(f"<h3>주소: {item[1]}</h3>", unsafe_allow_html=True)
+            st.markdown(f"<h3>한줄요약 : {what(w)}</h3>", unsafe_allow_html=True)

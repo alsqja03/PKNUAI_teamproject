@@ -8,6 +8,10 @@ import streamlit as st
 import streamlit.components.v1 as components
 from openai import OpenAI
 
+
+st.markdown("<h3>처음 즐길거리 페이지에 오셨다면 새로 고침(F5)를 눌러 APP 페이지에서 장소를 다시 입력 후 와주세요.</h3>", unsafe_allow_html=True)
+
+
 KAKAO_API_KEY = "83c0445f5fc4a2ee846f09e47fb00187"
 pq = "sk-proj-VniTgLPw2NvHFRnnZ-6A6ygka9U-3uCPIfbYLFXXLcBoFIpopYa2eJVXGhXc06Yw"
 qp = "yo3E50xRoST3BlbkFJvcMzdaG5JpXLgAWPixiYLd8DIvKePuz0jv0vJP71ubW2_3_loKnA1t2srxe-7E3_5tjt4VNtUA"

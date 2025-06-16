@@ -1,111 +1,135 @@
-import streamlit as st
+mport streamlit as st
 import requests
-import re
+import folium
+from streamlit_folium import st_folium
 
-st.set_page_config(page_title="즐길거리 추천기", page_icon="🎡")
-st.title("🎡 여행지 즐길거리 추천")
+# ✅ API 키
+kakao_api_key = "12ef3a654aaaed8710e1f5a04454d0a2"
+tmap_api_key = "MSQEscmmjL6QqEvry9SJ47eodN5WnKD6R9kv5ie4"
 
-# Kakao Local API Key
-KAKAO_API_KEY = "cf0f3e08c8579cf39f37df048fc9802a"
+# 주소 또는 키워드 → 좌표 변환 함수
+def address_to_coord(address, kakao_api_key):
+    headers = {"Authorization": f"KakaoAK {kakao_api_key}"}
+    url_keyword = "https://dapi.kakao.com/v2/local/search/keyword.json"
+    params = {"query": address}
 
-# Naver Search API
-NAVER_CLIENT_ID = "wxZvR_Hx1sBwjb1rnxBZ"
-NAVER_CLIENT_SECRET = "Hhznyt4xzf"
+    response = requests.get(url_keyword, headers=headers, params=params).json()
+    documents = response.get("documents", [])
 
-# 여행지 위치 가져오기
-location = st.session_state.get("location")
-if not location:
-    st.warning("❗ 메인 페이지에서 여행지를 먼저 입력해 주세요.")
-    st.stop()
+    if documents:
+        x = float(documents[0]["x"])
+        y = float(documents[0]["y"])
+        st.info(f"📍 키워드 검색 결과: {documents[0]['place_name']}")
+        return x, y
 
-# 즐길거리 키워드 (일반적으로 많이 검색되는 테마 위주)
-activity_keywords = [
-    "관광지", "핫플레이스", "체험", "명소", "박물관", "전시", "테마파크", "랜드마크", "산책로", "시장", "유적지", "카페거리"
-]
+    st.error(f"❌ '{address}'에 대한 장소를 찾을 수 없습니다.")
+    return None, None
 
-# Kakao 장소 검색
-def search_places_kakao(query):
-    headers = {"Authorization": f"KakaoAK {KAKAO_API_KEY}"}
-    params = {"query": query, "size": 15}
-    res = requests.get("https://dapi.kakao.com/v2/local/search/keyword.json", headers=headers, params=params)
-    return res.json().get("documents", [])
-
-# Naver 블로그 후기 분석
-def analyze_blog_reviews(place_name, full_query):
+# TMAP 경로 요청 함수 + 요약 정보 반환
+def get_tmap_route(start_x, start_y, end_x, end_y, route_type, tmap_api_key):
     headers = {
-        "X-Naver-Client-Id": NAVER_CLIENT_ID,
-        "X-Naver-Client-Secret": NAVER_CLIENT_SECRET
+        "appKey": tmap_api_key,
+        "Content-Type": "application/json",
+        "Accept": "application/json"
     }
-    params = {
-        "query": full_query,
-        "display": 5,
-        "sort": "sim"
+
+    # 도보, 자동차 경로 처리
+    if route_type == "자동차":
+        url = "https://apis.openapi.sk.com/tmap/routes"
+    else:  # 도보
+        url = "https://apis.openapi.sk.com/tmap/routes/pedestrian?version=1&format=json"
+
+    payload = {
+        "startX": str(start_x),
+        "startY": str(start_y),
+        "endX": str(end_x),
+        "endY": str(end_y),
+        "reqCoordType": "WGS84GEO",
+        "resCoordType": "WGS84GEO",
     }
-    res = requests.get("https://openapi.naver.com/v1/search/blog.json", headers=headers, params=params)
-    items = res.json().get("items", [])
 
-    combined_text = ""
-    links = []
-    for item in items:
-        title = re.sub(r"<.*?>", "", item["title"])
-        desc = re.sub(r"<.*?>", "", item["description"])
-        link = item["link"]
+    if route_type == "도보":
+        payload["startName"] = "출발지"
+        payload["endName"] = "도착지"
+    if route_type == "자동차":
+        payload["searchOption"] = "0"
 
-        if place_name in title or place_name in desc:
-            combined_text += f"{title} {desc} "
-            links.append((title.strip(), link))
+    response = requests.post(url, headers=headers, json=payload)
+    if response.status_code != 200:
+        st.error(f"{route_type} API 요청 실패: 상태 코드 {response.status_code}")
+        st.write(response.text)
+        return [], None, None
 
-        if len(links) >= 3:
-            break
+    data = response.json()
+    features = data.get("features", [])
+    summary = None
+    if features:
+        properties = features[0].get("properties", {})
+        summary = {
+            "totalDistance": properties.get("totalDistance", 0),
+            "totalTime": properties.get("totalTime", 0),
+            "totalFare": properties.get("totalFare", 0),
+            "taxiFare": properties.get("taxiFare", 0)
+        }
+    return features, summary, data
 
-    keywords = []
-    keyword_candidates = [
-        "뷰", "가성비", "사진", "산책", "데이트", "가족", "체험", "이색", "감성", "전통", "역사", "문화", "힐링", "활동", "동물", "아이", "야경"
-    ]
-    found_keywords = sorted(set([k for k in keyword_candidates if k in combined_text]))
+# Streamlit UI
+st.title("🚗 여행지 경로 검색")
 
-    return found_keywords, links
+st.header("🗺️ 경로 설정")
+start_address = st.text_input("출발지 입력", "서울역")
+end_address = st.text_input("도착지 입력", st.session_state.get("location", "강남역"))
+route_type = st.selectbox("경로 유형 선택", ["도보", "자동차"])
 
-# 즐길거리 검색
-results = []
-for kw in activity_keywords:
-    places = search_places_kakao(f"{location} {kw}")
-    for place in places:
-        name = place["place_name"]
-        address = place["road_address_name"] or place["address_name"]
-        map_url = place["place_url"]
-        keywords, blog_links = analyze_blog_reviews(name, f"{location} {name}")
-        if blog_links:
-            results.append({
-                "name": name,
-                "address": address,
-                "map_url": map_url,
-                "keywords": keywords,
-                "blogs": blog_links
-            })
+if st.button("경로 검색"):
+    start_x, start_y = address_to_coord(start_address, kakao_api_key)
+    end_x, end_y = address_to_coord(end_address, kakao_api_key)
 
-# 중복 제거 및 최대 15개 제한
-unique_results = []
-seen = set()
-for r in results:
-    if r["name"] not in seen:
-        seen.add(r["name"])
-        unique_results.append(r)
-    if len(unique_results) >= 15:
-        break
+    if None in [start_x, start_y, end_x, end_y]:
+        st.error("출발지 또는 도착지 주소를 찾을 수 없습니다.")
+    else:
+        st.success(f"출발지 좌표: ({start_y}, {start_x})\n도착지 좌표: ({end_y}, {end_x})")
+        features, summary, raw_data = get_tmap_route(start_x, start_y, end_x, end_y, route_type, tmap_api_key)
 
-# 출력
-if unique_results:
-    for r in unique_results:
-        st.markdown(f"### 🏛️ {r['name']}")
-        st.write(f"📌 주소: {r['address']}")
-        st.markdown(f"🗺️ [지도 보기]({r['map_url']})")
-        if r["keywords"]:
-            st.write("💡 후기 키워드:", ", ".join(r["keywords"]))
-        if r["blogs"]:
-            st.write("📰 관련 블로그 후기:")
-            for title, link in r["blogs"]:
-                st.markdown(f"- [{title}]({link})")
-        st.markdown("---")
-else:
-    st.info("즐길거리를 찾을 수 없습니다. 다른 지역을 입력해 보세요.")
+        if features is None:
+            st.error("경로 정보를 가져오지 못했습니다.")
+        else:
+            st.session_state['map_features'] = features
+            st.session_state['start_coord'] = (start_y, start_x)
+            st.session_state['end_coord'] = (end_y, end_x)
+            st.session_state['route_summary'] = summary
+            st.session_state['route_type'] = route_type
+
+# 결과 출력 및 지도 그리기
+if 'map_features' in st.session_state:
+    features = st.session_state['map_features']
+    start_y, start_x = st.session_state['start_coord']
+    end_y, end_x = st.session_state['end_coord']
+    summary = st.session_state['route_summary']
+    route_type = st.session_state.get('route_type', '도보')
+
+    if summary:
+        st.subheader("📊 경로 요약 정보")
+        st.write(f"**총 거리:** {summary.get('totalDistance', 0) / 1000:.1f} km")
+        st.write(f"**총 소요 시간:** {summary.get('totalTime', 0) / 60:.0f} 분")
+        st.write(f"**총 요금:** {summary.get('totalFare', 0)} 원")
+
+    m = folium.Map(location=[(start_y + end_y) / 2, (start_x + end_x) / 2], zoom_start=13)
+    folium.Marker([start_y, start_x], tooltip="출발지", icon=folium.Icon(color='green')).add_to(m)
+    folium.Marker([end_y, end_x], tooltip="도착지", icon=folium.Icon(color='red')).add_to(m)
+
+    route_line = []
+    for feature in features:
+        geometry = feature.get("geometry", {})
+        if geometry.get("type") == "LineString":
+            coords = geometry.get("coordinates", [])
+            for coord in coords:
+                lon, lat = coord
+                route_line.append((lat, lon))
+
+    if route_line:
+        folium.PolyLine(route_line, color="blue", weight=5, opacity=0.8).add_to(m)
+    else:
+        st.warning("경로 정보를 가져오지 못했습니다.")
+
+    st_folium(m, width=700, height=500)

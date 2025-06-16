@@ -5,29 +5,49 @@ import folium
 from streamlit_folium import st_folium
 
 st.set_page_config(page_title="즐길거리 추천기", page_icon="🎡")
+st.title("🎡 여행지 즐길거리 추천")
 
-# API 키들
+# Kakao Local API Key
 KAKAO_API_KEY = "12ef3a654aaaed8710e1f5a04454d0a2"
+
+# Naver Search API
 NAVER_CLIENT_ID = "wxZvR_Hx1sBwjb1rnxBZ"
 NAVER_CLIENT_SECRET = "Hhznyt4xzf"
 
+# 여행지 위치 가져오기
 location = st.session_state.get("location")
 if not location:
     st.warning("❗ 메인 페이지에서 여행지를 먼저 입력해 주세요.")
     st.stop()
 
 activity_keywords = [
-    "관광지", "핫플레이스", "체험", "명소", "박물관"
-]  # 키워드 수 줄임
+    "관광지", "핫플레이스", "체험", "명소", "박물관", "전시", "테마파크", "랜드마크", "산책로", "시장", "유적지", "카페거리"
+]
 
-@st.cache_data(ttl=3600)
+def address_to_coord(address, kakao_api_key):
+    headers = {"Authorization": f"KakaoAK {kakao_api_key}"}
+    url_keyword = "https://dapi.kakao.com/v2/local/search/keyword.json"
+    params = {"query": address}
+
+    response = requests.get(url_keyword, headers=headers, params=params).json()
+    documents = response.get("documents", [])
+
+    if documents:
+        x = float(documents[0]["x"])
+        y = float(documents[0]["y"])
+        return x, y
+
+    st.error(f"❌ '{address}'에 대한 장소를 찾을 수 없습니다.")
+    return None, None
+    
+# Kakao 장소 검색 (좌표 포함)
 def search_places_kakao(query):
     headers = {"Authorization": f"KakaoAK {KAKAO_API_KEY}"}
     params = {"query": query, "size": 7}
     res = requests.get("https://dapi.kakao.com/v2/local/search/keyword.json", headers=headers, params=params)
     return res.json().get("documents", [])
 
-@st.cache_data(ttl=3600)
+# Naver 블로그 후기 분석
 def analyze_blog_reviews(place_name, full_query):
     headers = {
         "X-Naver-Client-Id": NAVER_CLIENT_ID,
@@ -35,7 +55,7 @@ def analyze_blog_reviews(place_name, full_query):
     }
     params = {
         "query": full_query,
-        "display": 3,  # 블로그 개수 줄임
+        "display": 5,
         "sort": "sim"
     }
     res = requests.get("https://openapi.naver.com/v1/search/blog.json", headers=headers, params=params)
@@ -56,13 +76,13 @@ def analyze_blog_reviews(place_name, full_query):
             break
 
     keyword_candidates = [
-        "뷰", "가성비", "사진", "산책", "데이트", "가족", "체험", "이색", "감성",
-        "전통", "역사", "문화", "힐링", "활동", "동물", "아이", "야경"
+        "뷰", "가성비", "사진", "산책", "데이트", "가족", "체험", "이색", "감성", "전통", "역사", "문화", "힐링", "활동", "동물", "아이", "야경"
     ]
     found_keywords = sorted(set([k for k in keyword_candidates if k in combined_text]))
+
     return found_keywords, links
 
-# 검색 및 결과 저장
+# 즐길거리 검색
 results = []
 for kw in activity_keywords:
     places = search_places_kakao(f"{location} {kw}")
@@ -70,8 +90,8 @@ for kw in activity_keywords:
         name = place["place_name"]
         address = place["road_address_name"] or place["address_name"]
         map_url = place["place_url"]
-        x = float(place["x"])
-        y = float(place["y"])
+        x = float(place["x"])  # 경도
+        y = float(place["y"])  # 위도
         keywords, blog_links = analyze_blog_reviews(name, f"{location} {name}")
         if blog_links:
             results.append({
@@ -84,9 +104,10 @@ for kw in activity_keywords:
                 "lng": x
             })
 
-# 중복 제거, 최대 7개
+# 중복 제거 및 최대 7개까지 채우기
 unique_results = []
 seen = set()
+
 for r in results:
     if r["name"] not in seen:
         seen.add(r["name"])
@@ -94,12 +115,39 @@ for r in results:
     if len(unique_results) >= 7:
         break
 
+# 7개 못 채웠으면 블로그 후기 없는 장소도 추가해서 7개 채우기
+if len(unique_results) < 7:
+    for kw in activity_keywords:
+        places = search_places_kakao(f"{location} {kw}")
+        for place in places:
+            name = place["place_name"]
+            if name in seen:
+                continue
+            address = place["road_address_name"] or place["address_name"]
+            map_url = place["place_url"]
+            x = float(place["x"])
+            y = float(place["y"])
+            unique_results.append({
+                "name": name,
+                "address": address,
+                "map_url": map_url,
+                "keywords": [],
+                "blogs": [],
+                "lat": y,
+                "lng": x
+            })
+            seen.add(name)
+            if len(unique_results) >= 7:
+                break
+        if len(unique_results) >= 7:
+            break
+
+# 출력 및 지도 표시
 if unique_results:
     avg_lat = sum(r["lat"] for r in unique_results) / len(unique_results)
     avg_lng = sum(r["lng"] for r in unique_results) / len(unique_results)
 
     m = folium.Map(location=[avg_lat, avg_lng], zoom_start=13)
-
     for r in unique_results:
         folium.Marker(
             location=[r["lat"], r["lng"]],
@@ -107,11 +155,14 @@ if unique_results:
             tooltip=r['name'],
             icon=folium.Icon(color='blue', icon='info-sign')
         ).add_to(m)
-
     st_folium(m, width=700, height=450)
 
     for r in unique_results:
-        st.markdown(f"### 🏛️ {r['name']}")
+        if r["name"]:
+            st.markdown(f"### 🏛️ {r['name']}")
+        else:
+            st.markdown("### 🏛️ 이름 없음")
+
         st.write(f"📌 주소: {r['address']}")
         st.markdown(f"🗺️ [지도 보기]({r['map_url']})")
         if r["keywords"]:

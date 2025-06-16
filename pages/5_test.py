@@ -6,7 +6,7 @@ st.set_page_config(page_title="즐길거리 추천기", page_icon="🎡")
 st.title("🎡 여행지 즐길거리 추천")
 
 # Kakao Local API Key
-KAKAO_API_KEY = "cf0f3e08c8579cf39f37df048fc9802a"
+KAKAO_API_KEY = "12ef3a654aaaed8710e1f5a04454d0a2"
 
 # Naver Search API
 NAVER_CLIENT_ID = "wxZvR_Hx1sBwjb1rnxBZ"

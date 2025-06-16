@@ -27,7 +27,7 @@ activity_keywords = [
 # Kakao 장소 검색 (좌표 포함)
 def search_places_kakao(query):
     headers = {"Authorization": f"KakaoAK {KAKAO_API_KEY}"}
-    params = {"query": query, "size": 15}
+    params = {"query": query, "size": 7}
     res = requests.get("https://dapi.kakao.com/v2/local/search/keyword.json", headers=headers, params=params)
     return res.json().get("documents", [])
 

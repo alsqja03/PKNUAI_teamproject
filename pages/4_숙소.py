@@ -8,9 +8,12 @@ st.set_page_config(page_title="숙소 추천기", page_icon="🏨")
 st.title("🏨 GPT 기반 숙소 추천기")
 st.markdown("여행지를 입력하고 추천 숙소 정보를 확인하세요.")
 
-# ▶️ 사용자 OpenAI API 키 입력 (메인 화면)
-openai_key = st.text_input("🔐 OpenAI API Key를 입력하세요", type="password")
+pq = "sk-proj-VniTgLPw2NvHFRnnZ-6A6ygka9U-3uCPIfbYLFXXLcBoFIpopYa2eJVXGhXc06Yw"
+qp = "yo3E50xRoST3BlbkFJvcMzdaG5JpXLgAWPixiYLd8DIvKePuz0jv0vJP71ubW2_3_loKnA1t2srxe-7E3_5tjt4VNtUA"
 
+# ▶️ 사용자 OpenAI API 키 입력 (메인 화면)
+#openai_key = st.text_input("🔐 OpenAI API Key를 입력하세요", type="password")
+openai_key = pq+qp
 # ▶️ 네이버 API 키는 고정값으로 설정
 naver_client_id = "wxZvR_Hx1sBwjb1rnxBZ"
 naver_client_secret = "Hhznyt4xzf"

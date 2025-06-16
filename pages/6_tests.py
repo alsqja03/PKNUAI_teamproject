@@ -100,41 +100,52 @@ for r in results:
 
 # 출력 및 지도 표시
 if unique_results:
-    # 지도의 초기 중심 좌표: 첫 장소 기준
-    map_center = [unique_results[0]["lat"], unique_results[0]["lng"]]
-    m = folium.Map(location=map_center, zoom_start=13)
-
+    # 좌표 리스트 뽑기 (위도, 경도)
+    coords = []
     for r in unique_results:
-        # 마커 추가
-        popup_content = f"<b>{r['name']}</b><br>{r['address']}<br>"
+        # 카카오 키워드 검색으로 좌표 얻기 (함수 정의 필요)
+        x, y = address_to_coord(r["address"], KAKAO_API_KEY)
+        if x and y:
+            coords.append((y, x))  # (위도, 경도)
+
+    # 중심 좌표 계산 (평균)
+    if coords:
+        avg_lat = sum([c[0] for c in coords]) / len(coords)
+        avg_lon = sum([c[1] for c in coords]) / len(coords)
+    else:
+        avg_lat, avg_lon = 37.5665, 126.9780  # 서울 기본값
+
+    # 지도 생성
+    m = folium.Map(location=[avg_lat, avg_lon], zoom_start=13)
+
+    # 마커 추가
+    for i, r in enumerate(unique_results):
+        x, y = address_to_coord(r["address"], KAKAO_API_KEY)
+        if x and y:
+            folium.Marker(
+                location=[y, x],
+                popup=f"{r['name']}\n{r['address']}",
+                tooltip=r['name'],
+                icon=folium.Icon(color='blue', icon='info-sign')
+            ).add_to(m)
+
+    # 지도 출력 (맨 위)
+    st_folium(m, width=700, height=450)
+
+    # --------------------
+    # 즐길거리 리스트 출력 (지도 아래)
+    # --------------------
+    for r in unique_results:
+        st.markdown(f"### 🏛️ {r['name']}")
+        st.write(f"📌 주소: {r['address']}")
+        st.markdown(f"🗺️ [지도 보기]({r['map_url']})")
         if r["keywords"]:
-            popup_content += f"후기 키워드: {', '.join(r['keywords'])}<br>"
+            st.write("💡 후기 키워드:", ", ".join(r["keywords"]))
         if r["blogs"]:
-            popup_content += "<a href='{}' target='_blank'>블로그 후기 보기</a>".format(r["blogs"][0][1])
-        folium.Marker(
-            [r["lat"], r["lng"]],
-            popup=folium.Popup(popup_content, max_width=300),
-            tooltip=r["name"],
-            icon=folium.Icon(color="blue", icon="info-sign")
-        ).add_to(m)
-
-    # 왼쪽에 리스트, 오른쪽에 지도 배치
-    col1, col2 = st.columns([1, 2])
-    with col1:
-        for r in unique_results:
-            st.markdown(f"### 🏛️ {r['name']}")
-            st.write(f"📌 주소: {r['address']}")
-            st.markdown(f"🗺️ [지도 보기]({r['map_url']})")
-            if r["keywords"]:
-                st.write("💡 후기 키워드:", ", ".join(r["keywords"]))
-            if r["blogs"]:
-                st.write("📰 관련 블로그 후기:")
-                for title, link in r["blogs"]:
-                    st.markdown(f"- [{title}]({link})")
-            st.markdown("---")
-
-    with col2:
-        st_folium(m, width=700, height=600)
+            st.write("📰 관련 블로그 후기:")
+            for title, link in r["blogs"]:
+                st.markdown(f"- [{title}]({link})")
+        st.markdown("---")
 
 else:
     st.info("즐길거리를 찾을 수 없습니다. 다른 지역을 입력해 보세요.")

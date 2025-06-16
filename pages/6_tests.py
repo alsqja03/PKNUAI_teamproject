@@ -24,6 +24,22 @@ activity_keywords = [
     "관광지", "핫플레이스", "체험", "명소", "박물관", "전시", "테마파크", "랜드마크", "산책로", "시장", "유적지", "카페거리"
 ]
 
+def address_to_coord(address, kakao_api_key):
+    headers = {"Authorization": f"KakaoAK {kakao_api_key}"}
+    url_keyword = "https://dapi.kakao.com/v2/local/search/keyword.json"
+    params = {"query": address}
+
+    response = requests.get(url_keyword, headers=headers, params=params).json()
+    documents = response.get("documents", [])
+
+    if documents:
+        x = float(documents[0]["x"])
+        y = float(documents[0]["y"])
+        return x, y
+
+    st.error(f"❌ '{address}'에 대한 장소를 찾을 수 없습니다.")
+    return None, None
+    
 # Kakao 장소 검색 (좌표 포함)
 def search_places_kakao(query):
     headers = {"Authorization": f"KakaoAK {KAKAO_API_KEY}"}

@@ -91,7 +91,7 @@ for r in results:
     if r["name"] not in seen:
         seen.add(r["name"])
         unique_results.append(r)
-    if len(unique_results) >= 10:
+    if len(unique_results) >= 8:
         break
 
 # 출력

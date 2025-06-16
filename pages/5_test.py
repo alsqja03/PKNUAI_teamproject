@@ -91,13 +91,13 @@ for r in results:
     if r["name"] not in seen:
         seen.add(r["name"])
         unique_results.append(r)
-    if len(unique_results) >= 15:
+    if len(unique_results) >= 10:
         break
 
 # 출력
 if unique_results:
     for r in unique_results:
-        st.markdown(f"### 🎯 {r['name']}")
+        st.markdown(f"### 🏛️ {r['name']}")
         st.write(f"📌 주소: {r['address']}")
         st.markdown(f"🗺️ [지도 보기]({r['map_url']})")
         if r["keywords"]:

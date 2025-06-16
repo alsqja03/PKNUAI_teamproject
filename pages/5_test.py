@@ -1,36 +1,33 @@
 import streamlit as st
 import requests
 import re
+import folium
+from streamlit_folium import st_folium
 
 st.set_page_config(page_title="즐길거리 추천기", page_icon="🎡")
-st.title("🎡 여행지 즐길거리 추천")
 
-# Kakao Local API Key
-KAKAO_API_KEY = "cf0f3e08c8579cf39f37df048fc9802a"
-
-# Naver Search API
+# API 키들
+KAKAO_API_KEY = "12ef3a654aaaed8710e1f5a04454d0a2"
 NAVER_CLIENT_ID = "wxZvR_Hx1sBwjb1rnxBZ"
 NAVER_CLIENT_SECRET = "Hhznyt4xzf"
 
-# 여행지 위치 가져오기
 location = st.session_state.get("location")
 if not location:
     st.warning("❗ 메인 페이지에서 여행지를 먼저 입력해 주세요.")
     st.stop()
 
-# 즐길거리 키워드 (일반적으로 많이 검색되는 테마 위주)
 activity_keywords = [
-    "관광지", "핫플레이스", "체험", "명소", "박물관", "전시", "테마파크", "랜드마크", "산책로", "시장", "유적지", "카페거리"
-]
+    "관광지", "핫플레이스", "체험", "명소", "박물관"
+]  # 키워드 수 줄임
 
-# Kakao 장소 검색
+@st.cache_data(ttl=3600)
 def search_places_kakao(query):
     headers = {"Authorization": f"KakaoAK {KAKAO_API_KEY}"}
-    params = {"query": query, "size": 15}
+    params = {"query": query, "size": 7}
     res = requests.get("https://dapi.kakao.com/v2/local/search/keyword.json", headers=headers, params=params)
     return res.json().get("documents", [])
 
-# Naver 블로그 후기 분석
+@st.cache_data(ttl=3600)
 def analyze_blog_reviews(place_name, full_query):
     headers = {
         "X-Naver-Client-Id": NAVER_CLIENT_ID,
@@ -38,7 +35,7 @@ def analyze_blog_reviews(place_name, full_query):
     }
     params = {
         "query": full_query,
-        "display": 5,
+        "display": 3,  # 블로그 개수 줄임
         "sort": "sim"
     }
     res = requests.get("https://openapi.naver.com/v1/search/blog.json", headers=headers, params=params)
@@ -58,15 +55,14 @@ def analyze_blog_reviews(place_name, full_query):
         if len(links) >= 3:
             break
 
-    keywords = []
     keyword_candidates = [
-        "뷰", "가성비", "사진", "산책", "데이트", "가족", "체험", "이색", "감성", "전통", "역사", "문화", "힐링", "활동", "동물", "아이", "야경"
+        "뷰", "가성비", "사진", "산책", "데이트", "가족", "체험", "이색", "감성",
+        "전통", "역사", "문화", "힐링", "활동", "동물", "아이", "야경"
     ]
     found_keywords = sorted(set([k for k in keyword_candidates if k in combined_text]))
-
     return found_keywords, links
 
-# 즐길거리 검색
+# 검색 및 결과 저장
 results = []
 for kw in activity_keywords:
     places = search_places_kakao(f"{location} {kw}")
@@ -74,6 +70,8 @@ for kw in activity_keywords:
         name = place["place_name"]
         address = place["road_address_name"] or place["address_name"]
         map_url = place["place_url"]
+        x = float(place["x"])
+        y = float(place["y"])
         keywords, blog_links = analyze_blog_reviews(name, f"{location} {name}")
         if blog_links:
             results.append({
@@ -81,10 +79,12 @@ for kw in activity_keywords:
                 "address": address,
                 "map_url": map_url,
                 "keywords": keywords,
-                "blogs": blog_links
+                "blogs": blog_links,
+                "lat": y,
+                "lng": x
             })
 
-# 중복 제거 및 최대 7개 제한
+# 중복 제거, 최대 7개
 unique_results = []
 seen = set()
 for r in results:
@@ -94,8 +94,22 @@ for r in results:
     if len(unique_results) >= 7:
         break
 
-# 출력
 if unique_results:
+    avg_lat = sum(r["lat"] for r in unique_results) / len(unique_results)
+    avg_lng = sum(r["lng"] for r in unique_results) / len(unique_results)
+
+    m = folium.Map(location=[avg_lat, avg_lng], zoom_start=13)
+
+    for r in unique_results:
+        folium.Marker(
+            location=[r["lat"], r["lng"]],
+            popup=f"{r['name']}\n{r['address']}",
+            tooltip=r['name'],
+            icon=folium.Icon(color='blue', icon='info-sign')
+        ).add_to(m)
+
+    st_folium(m, width=700, height=450)
+
     for r in unique_results:
         st.markdown(f"### 🏛️ {r['name']}")
         st.write(f"📌 주소: {r['address']}")

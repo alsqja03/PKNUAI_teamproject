@@ -84,14 +84,14 @@ for kw in activity_keywords:
                 "blogs": blog_links
             })
 
-# 중복 제거 및 최대 15개 제한
+# 중복 제거 및 최대 7개 제한
 unique_results = []
 seen = set()
 for r in results:
     if r["name"] not in seen:
         seen.add(r["name"])
         unique_results.append(r)
-    if len(unique_results) >= 15:
+    if len(unique_results) >= 7:
         break
 
 # 출력

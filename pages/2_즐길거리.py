@@ -184,7 +184,7 @@ if unique_results:
 
         st.write(f" 주소: {r['address']}")
         st.write(f"설명 : {what(r["name"])}")
-        st.markdown(f"🗺️ [지도 보기]({r['map_url']})")
+        st.markdown(f" [지도 보기]({r['map_url']})")
         if r["keywords"]:
             st.write("키워드:", ", ".join(r["keywords"]))
         if r["blogs"]:

@@ -134,7 +134,7 @@ for r in results:
     if len(unique_results) >= 7:
         break
 
-# 7개 못 채웠으면 블로그 후기 없는 장소도 추가해서 7개 채우기
+# 7개 못 채웠으면 블로그 후기 없는 장소도 추가해서 7개 채우기 - 이거 아래는 블로그 없는거임. 블로그 잇는걸 위에 띄우고 7개못차면 없는것도가져옴
 if len(unique_results) < 7:
     for kw in activity_keywords:
         places = search_places_kakao(f"{location} {kw}")

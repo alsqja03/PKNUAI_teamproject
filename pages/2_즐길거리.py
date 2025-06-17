@@ -10,8 +10,8 @@ pq = "sk-proj-VniTgLPw2NvHFRnnZ-6A6ygka9U-3uCPIfbYLFXXLcBoFIpopYa2eJVXGhXc06Yw"
 qp = "yo3E50xRoST3BlbkFJvcMzdaG5JpXLgAWPixiYLd8DIvKePuz0jv0vJP71ubW2_3_loKnA1t2srxe-7E3_5tjt4VNtUA"
 
 
-#apikey = pq+qp
-#client = OpenAI(api_key=apikey)
+apikey = pq+qp
+client = OpenAI(api_key=apikey)
 
 
 st.set_page_config(page_title="즐길거리 추천기", page_icon="🎡")
@@ -183,7 +183,7 @@ if unique_results:
             st.markdown("### 🏛️ 이름 없음")
 
         st.write(f"📌 주소: {r['address']}")
-       # st.write(f"설명 : {what(r["name"])}")
+        st.write(f"설명 : {what(r["name"])}")
         st.markdown(f"🗺️ [지도 보기]({r['map_url']})")
         if r["keywords"]:
             st.write("키워드:", ", ".join(r["keywords"]))

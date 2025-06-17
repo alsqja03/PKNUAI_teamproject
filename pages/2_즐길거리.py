@@ -182,13 +182,13 @@ if unique_results:
         else:
             st.markdown("###  이름 없음")
 
-        st.write(f"📌 주소: {r['address']}")
+        st.write(f" 주소: {r['address']}")
         st.write(f"설명 : {what(r["name"])}")
         st.markdown(f"🗺️ [지도 보기]({r['map_url']})")
         if r["keywords"]:
             st.write("키워드:", ", ".join(r["keywords"]))
         if r["blogs"]:
-            st.write("📰 관련 블로그 후기:")
+            st.write(" 관련 블로그 후기:")
             for title, link in r["blogs"]:
                 st.markdown(f"- [{title}]({link})")
         st.markdown("---")

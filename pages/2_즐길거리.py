@@ -3,6 +3,16 @@ import requests
 import re
 import folium
 from streamlit_folium import st_folium
+from openai import OpenAI
+import openai
+
+pq = "sk-proj-VniTgLPw2NvHFRnnZ-6A6ygka9U-3uCPIfbYLFXXLcBoFIpopYa2eJVXGhXc06Yw"
+qp = "yo3E50xRoST3BlbkFJvcMzdaG5JpXLgAWPixiYLd8DIvKePuz0jv0vJP71ubW2_3_loKnA1t2srxe-7E3_5tjt4VNtUA"
+
+
+apikey = pq+qp
+client = OpenAI(api_key=apikey)
+
 
 st.set_page_config(page_title="즐길거리 추천기", page_icon="🎡")
 st.title("🎡 여행지 즐길거리 추천")

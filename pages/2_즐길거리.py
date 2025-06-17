@@ -19,7 +19,16 @@ location = st.session_state.get("location")
 if not location:
     st.warning("❗ 메인 페이지에서 여행지를 먼저 입력해 주세요.")
     st.stop()
-
+#11
+def what(place):
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": f"검색기능을 활용해 다음 장소를 한줄로 간략하게 요약해줘. 말투는 ~입니다 체여야하고 장소이름을 굳이 안말해도돼. 장소의특성만 알려주면돼.  {place}"}
+        ]
+    )
+    return response.choices[0].message.content
+#11
 activity_keywords = [
     "관광지", "핫플레이스", "체험", "명소", "박물관", "전시", "테마파크", "랜드마크", "산책로", "시장", "유적지", "카페거리"
 ]
@@ -164,6 +173,7 @@ if unique_results:
             st.markdown("### 🏛️ 이름 없음")
 
         st.write(f"📌 주소: {r['address']}")
+        st.write(f"설명 : {what(r["name"])}
         st.markdown(f"🗺️ [지도 보기]({r['map_url']})")
         if r["keywords"]:
             st.write("💡 후기 키워드:", ", ".join(r["keywords"]))

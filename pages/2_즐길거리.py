@@ -178,9 +178,9 @@ if unique_results:
 
     for r in unique_results:
         if r["name"]:
-            st.markdown(f"### 🏛️ {r['name']}")
+            st.markdown(f"###  {r['name']}")
         else:
-            st.markdown("### 🏛️ 이름 없음")
+            st.markdown("###  이름 없음")
 
         st.write(f"📌 주소: {r['address']}")
         st.write(f"설명 : {what(r["name"])}")
